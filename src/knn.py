@@ -8,11 +8,17 @@ from operator import itemgetter
 trainingFile = "zip.train"
 testFile = "zip.test"
 
+# Start / End dimensions
 dimS = 1
 dimE = 257
 
+# Start / End training points
 trainS = 0
-trainE = 7292
+trainE = 7292 # max of 7291 points for zip.train
+
+# Start / End test points
+testS = 0
+testE = 2008 # max of 2007 for zip.test
 
 ### Global Variables ###
 trainingPoints = []
@@ -27,6 +33,7 @@ def readFile (filename):
         data = openFile.readlines()
         for line in data:
             info.append(line.split())
+    openFile.close()
     return info
 
 # Extract each number
@@ -63,16 +70,15 @@ def euclideanDistance(a, b):
 # returns: k nearest neighbors [value, distance, [dimensions]
 def kNeighbors(testValue, k):
     distances = []
-    for trainValue in trainingPoints[trainS:trainE]:        
+    for trainValue in trainingPoints[trainS:trainE]:
+        # find distance from test point to each training point
         distances.append([euclideanDistance(testValue, trainValue), trainValue[0], trainValue[dimS:dimE]])
     
+    # sort to get nearest neighbors
     distances.sort(key = itemgetter(0))
     
-    neighbors = []
-    for neighbor in range(0, k):
-        neighbors.append(distances[neighbor])
-    
-    return neighbors
+    # return k nearest neighbors
+    return distances[:k]
 
 # Find closest match by majority
 # params: testValue - value to search for
@@ -83,11 +89,14 @@ def byMajority(testValue, k):
     
     # Find count of neighbors with each value
     for neighbor in neighbors:
+        # if already present, increment count
         if neighbor[1] in count:
             count[neighbor[1]] += 1
         else:
+            # not present, add to dictionary
             count[neighbor[1]] = 1
-            
+
+    # return value with highest count            
     return max(count.iteritems(), key = itemgetter(1))[0]
 
 # Find the percentage error of knn
@@ -95,11 +104,16 @@ def byMajority(testValue, k):
 def checkError(k):
     incorrect = 0.0
     
-    for testPoint in testPoints:
+    # subset of testpoints
+    testSet = testPoints[testS:testE]
+    
+    # compare each test point value against its expected value
+    for testPoint in testSet:
         if testPoint[0] != byMajority(testPoint, k):
             incorrect += 1
  
-    return (incorrect / len(testPoints)) * 100
+    # return (incorrect guesses / total number of trials)
+    return (incorrect / len(testSet)) * 100
 
 # Check error over a range of k's
 # params: start, end - range of k
@@ -109,23 +123,28 @@ def checkErrorRange(start, end, interval):
     errorRate = []
     ks = []
     
+    print "k\tError(%)\tTime(s)"
+    
+    # select every nth k
     for i in range(start, end + 1):
         if i % interval != 0:
             ks.append(i);
     
+    # for every value of k, check error %
     for k in ks:  
-        intervalStart = time.clock()        
+        intervalStart = time.clock()
         error = checkError(k)
         intervalEnd = time.clock()
-        timeInterval = intervalEnd - intervalStart
+        timeInterval = intervalEnd - intervalStart        
         
-        print k, error, timeInterval
+        print k, "\t", error, "\t\t", timeInterval
         errorRate.append([i, error, timeInterval])
      
     return errorRate
 
+# read files
 trainingPoints = extractData(readFile(trainingFile))
 testPoints = extractData(readFile(testFile))
 
-# print checkError()
-print checkErrorRange(1, 25, 2)
+# Check Error for given: start/end k's, for every n k's
+checkErrorRange(1, 1, 2)
