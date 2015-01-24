@@ -2,20 +2,17 @@
 # tailored to work on numbers represented by 256 values
 
 import time
-import math
 from operator import itemgetter
 
 ### Input Parameters ###
 trainingFile = "zip.train"
 testFile = "zip.test"
 
-k = 1
-
 dimS = 1
 dimE = 257
 
 trainS = 0
-trainE = 999
+trainE = 7292
 
 ### Global Variables ###
 trainingPoints = []
@@ -56,9 +53,6 @@ def printPoints(start, end):
 # returns: euclidean distance between two points
 def euclideanDistance(a, b):
     d = 0
-#     for i in range(dimS, dimE):
-#         d += pow((a[i] - b[i]), 2)
-#     d = math.sqrt(d)
     for i in range(dimS, dimE):
         d += abs(a[i] - b[i])
 
@@ -67,9 +61,9 @@ def euclideanDistance(a, b):
 # Finds k nearest neighbors
 # params: testValue - value to test for
 # returns: k nearest neighbors [value, distance, [dimensions]
-def kNeighbors(testValue):
+def kNeighbors(testValue, k):
     distances = []
-    for trainValue in trainingPoints[trainS:trainE]:
+    for trainValue in trainingPoints[trainS:trainE]:        
         distances.append([euclideanDistance(testValue, trainValue), trainValue[0], trainValue[dimS:dimE]])
     
     distances.sort(key = itemgetter(0))
@@ -83,9 +77,9 @@ def kNeighbors(testValue):
 # Find closest match by majority
 # params: testValue - value to search for
 # returns: closest match 
-def byMajority(testValue):
+def byMajority(testValue, k):
     count = dict()
-    neighbors = kNeighbors(testValue)
+    neighbors = kNeighbors(testValue, k)
     
     # Find count of neighbors with each value
     for neighbor in neighbors:
@@ -93,17 +87,18 @@ def byMajority(testValue):
             count[neighbor[1]] += 1
         else:
             count[neighbor[1]] = 1
+            
     return max(count.iteritems(), key = itemgetter(1))[0]
 
 # Find the percentage error of knn
 # returns: percentage error
-def checkError():
+def checkError(k):
     incorrect = 0.0
     
     for testPoint in testPoints:
-        if testPoint[0] != byMajority(testPoint):
+        if testPoint[0] != byMajority(testPoint, k):
             incorrect += 1
-    
+ 
     return (incorrect / len(testPoints)) * 100
 
 # Check error over a range of k's
@@ -118,11 +113,9 @@ def checkErrorRange(start, end, interval):
         if i % interval != 0:
             ks.append(i);
     
-    for i in ks:
-        k = i
-        
+    for k in ks:  
         intervalStart = time.clock()        
-        error = checkError()
+        error = checkError(k)
         intervalEnd = time.clock()
         timeInterval = intervalEnd - intervalStart
         
@@ -131,12 +124,8 @@ def checkErrorRange(start, end, interval):
      
     return errorRate
 
-# Plots errors given a set of k's and errors
-# params: errors - list of k's and errors [k, %]
-# def plotErrors(errors):
-    
-
 trainingPoints = extractData(readFile(trainingFile))
 testPoints = extractData(readFile(testFile))
 
+# print checkError()
 print checkErrorRange(1, 25, 2)
