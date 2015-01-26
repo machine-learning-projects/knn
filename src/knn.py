@@ -1,8 +1,9 @@
 # k-nearest neighbors
 # tailored to work on numbers represented by 256 values
 
-import time
+import math
 from operator import itemgetter
+import time
 
 ### Input Parameters ###
 trainingFile = "zip.train"
@@ -10,7 +11,7 @@ testFile = "zip.test"
 
 # Start / End dimensions
 dimS = 1
-dimE = 257
+dimE = 257 # max of 265 points for zip.train / zip.test 
 
 # Start / End training points
 trainS = 0
@@ -56,9 +57,20 @@ def printPoints(start, end):
         print trainingPoints[i]
 
 # Similarity given by ||x_test - x_train||
-# params: a, b data points to compare
+# params: a, b - data points to compare
 # returns: euclidean distance between two points
 def euclideanDistance(a, b):
+    d = 0
+    for i in range(dimS, dimE):
+        d += pow((a[i] - b[i]), 2)
+        
+    d = math.sqrt(d)
+    return d
+
+# Similarity give nby absolute distance
+# params: a, b - data points to compare
+# returns: euclidean distance between two points
+def absoluteDistance(a, b):
     d = 0
     for i in range(dimS, dimE):
         d += abs(a[i] - b[i])
@@ -72,7 +84,7 @@ def kNeighbors(testValue, k):
     distances = []
     for trainValue in trainingPoints[trainS:trainE]:
         # find distance from test point to each training point
-        distances.append([euclideanDistance(testValue, trainValue), trainValue[0], trainValue[dimS:dimE]])
+        distances.append([euclideanDistance(testValue, trainValue), trainValue[0]])
     
     # sort to get nearest neighbors
     distances.sort(key = itemgetter(0))
@@ -146,5 +158,14 @@ def checkErrorRange(start, end, interval):
 trainingPoints = extractData(readFile(trainingFile))
 testPoints = extractData(readFile(testFile))
 
+print "K-Nearest Neighbors"
+
+# Print params
+print "Item\t\tStart\t\tEnd"
+print "Dimensions:\t", dimS, "\t-\t", dimE
+print "Training:\t", trainS, "\t-\t", trainE
+print "Testing:\t", testS, "\t-\t", testE
+print "\n"
+
 # Check Error for given: start/end k's, for every n k's
-checkErrorRange(1, 1, 2)
+checkErrorRange(1, 25, 2)
